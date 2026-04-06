@@ -14,10 +14,13 @@
 
     forAllSystems = f:
       nixpkgs.lib.genAttrs supportedSystems (
-        system: f nixpkgs.legacyPackages.${system}
+        system: f (nixpkgs.legacyPackages.${system}.appendOverlays [self.overlays.default])
       );
 
     sourcesFile = builtins.fromJSON (builtins.readFile ./sources.json);
+
+    mkProjectFactory = lib:
+      (import ./lib/project-factory.nix {inherit lib;}).project-factory;
 
     mkSkillPackages = pkgs: let
       lib = pkgs.lib;
@@ -34,6 +37,8 @@
       )
       skillPackages;
   in {
+    lib.project-factory = mkProjectFactory nixpkgs.lib;
+
     homeManagerModules.agents = import ./modules/home-manager/agents.nix;
     homeManagerModules.default = self.homeManagerModules.agents;
     homeModules.default = self.homeManagerModules.agents;
@@ -42,8 +47,20 @@
       agent-skills = mkSkillPackages final;
     };
 
-    devShells = forAllSystems (pkgs: {
+    devShells = forAllSystems (pkgs: let
+      agentic-setup = self.lib.project-factory {
+        inherit pkgs;
+
+        plugins = with pkgs.agent-skills; [
+          (official.anthropics.skills {
+            scopes = ["standard" "claude"];
+            plugins = ["skill-creator"];
+          })
+        ];
+      };
+    in {
       default = pkgs.mkShell {
+        inherit (agentic-setup) shellHook;
         buildInputs = with pkgs; [
           bun
           htmlq
