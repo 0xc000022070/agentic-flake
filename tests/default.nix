@@ -53,6 +53,7 @@
   suites = {
     "encoredev-skills-installation" = ./encoredev-skills.nix;
     "prefix-and-scopes" = ./prefix-and-scopes.nix;
+    "workspaces" = ./workspaces.nix;
   };
 in
   pkgs.lib.mapAttrs (name: path: mkAgentSkillsTest name path) suites

@@ -25,12 +25,25 @@
   in
     map (s: toolDirs.${s}) normalized;
 
+  # Convert a scope to a directory, handling both built-in tools and workspaces
+  scopeToDir = scope:
+    if builtins.hasAttr scope toolDirs
+    then toolDirs.${scope}
+    else if builtins.hasAttr scope cfg.workspaces
+    then "${cfg.workspaces.${scope}.path}/.agents/skills"
+    else
+      throw "Unknown scope '${scope}': not a built-in tool (${lib.concatStringsSep ", " allTools}) or defined workspace";
+
   mkConfiguredSkillFiles = entry: let
     drv = entry.drv;
     plugins = entry.plugins;
     scopes = entry.scopes or ["global"];
     prefix = entry.prefix or "";
-    dirs = scopeToDirs scopes;
+    normalized =
+      if builtins.isList scopes
+      then scopes
+      else [scopes];
+    dirs = map scopeToDir normalized;
   in
     lib.listToAttrs (lib.flatten (
       map (plugin:
@@ -48,6 +61,47 @@
 in {
   options.programs.agents = {
     enable = mkEnableOption "Declarative agent skills for AI coding tools";
+
+    workspaces = mkOption {
+      type = types.attrsOf (types.submodule {
+        options = {
+          path = mkOption {
+            type = types.str;
+            description = ''
+              Relative path to the workspace directory (relative to home directory).
+              Example: "Projects/github.com/myapp"
+            '';
+          };
+          scopes = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = ''
+              List of tool scopes to use within this workspace.
+              When a skill is configured with a scope matching a workspace name,
+              its skills will be installed at `<workspace-path>/.agents/skills/`.
+            '';
+          };
+        };
+      });
+      default = {};
+      description = ''
+        Declare project-specific workspaces where skills can be scoped.
+
+        Each workspace is a directory with an associated tool scope name.
+        You can then use the workspace name as a scope when configuring skills.
+      '';
+      example = lib.literalExpression ''
+        {
+          "cc" = {
+            path = "Projects/github.com/chanchitaapp";
+            scopes = ["claude"];
+          };
+          "myapi" = {
+            path = "src/myapi";
+          };
+        }
+      '';
+    };
 
     skills = mkOption {
       type = types.listOf types.raw;
@@ -67,7 +121,8 @@ in {
 
         - `plugins`: list of skill names to install from the package
         - `scopes`: where to install — `"global"` (~/.agents/skills/),
-          or tool-specific: ${lib.concatStringsSep ", " (map (t: ''"${t}"'') allTools)}
+          tool-specific: ${lib.concatStringsSep ", " (map (t: ''"${t}"'') allTools)},
+          or a workspace name defined in `workspaces`
         - `prefix`: string prepended to each skill directory name (to avoid conflicts)
 
         Skills are symlinked at activation time into each scope directory as:
@@ -87,19 +142,14 @@ in {
             scopes = ["global" "claude"];
           })
 
-          (official.anthropics.claude-code {
-            plugins = [
-              "claude-api"
-              "pdf"
-              "docx"
-              "xlsx"
-              "pptx"
-            ];
+          (official.getsentry.skills {
+            plugins = ["find-bugs"];
+            scopes = ["cc"];  # uses workspace named "cc"
           })
 
-          (official.anthropics.claude-code {
-            plugins = ["mcp-builder"];
-            scopes = ["codex"];
+          (official.anthropics.skills {
+            plugins = ["pdf" "pptx"];
+            scopes = ["global"];
             prefix = "anthropic-";
           })
         ]
