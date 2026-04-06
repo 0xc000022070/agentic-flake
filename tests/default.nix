@@ -5,10 +5,10 @@
 }: let
   pkgs = (nixpkgs.legacyPackages.x86_64-linux).appendOverlays [self.overlays.default];
 
-  mkAgentSkillsTest = name: suitePath: let
+  mkTestSuite = name: suitePath: let
     suite = import suitePath {
       inherit pkgs home-manager;
-      agent-skills-flake = self;
+      agentic-flake = self;
     };
   in
     pkgs.testers.nixosTest {
@@ -56,4 +56,4 @@
     "workspaces" = ./workspaces.nix;
   };
 in
-  pkgs.lib.mapAttrs (name: path: mkAgentSkillsTest name path) suites
+  pkgs.lib.mapAttrs (name: path: mkTestSuite name path) suites

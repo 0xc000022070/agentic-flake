@@ -39,9 +39,7 @@
   in {
     lib.project-factory = mkProjectFactory nixpkgs.lib;
 
-    homeManagerModules.agents = import ./modules/home-manager/agents.nix;
-    homeManagerModules.default = self.homeManagerModules.agents;
-    homeModules.default = self.homeManagerModules.agents;
+    homeModules.default = import ./modules/home-manager/agents.nix;
 
     overlays.default = final: _prev: {
       agent-skills = mkSkillPackages final;

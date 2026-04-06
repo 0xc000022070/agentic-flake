@@ -1,10 +1,10 @@
 {
-  agent-skills-flake,
+  agentic-flake,
   pkgs,
   ...
 }: {
   homeModule = {
-    imports = [agent-skills-flake.homeManagerModules.agents];
+    imports = [agentic-flake.homeModules.default];
 
     programs.agents = {
       enable = true;
