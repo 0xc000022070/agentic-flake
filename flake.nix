@@ -44,10 +44,6 @@
       };
     };
 
-    packages = forAllSystems (pkgs: {
-      skills-sh = mkSkillPackages pkgs;
-    });
-
     devShells = forAllSystems (pkgs: {
       default = pkgs.mkShell {
         buildInputs = with pkgs; [
@@ -58,5 +54,14 @@
         ];
       };
     });
+
+    checks = forAllSystems (
+      pkgs:
+        import ./tests {
+          self = self;
+          nixpkgs = nixpkgs;
+          inherit home-manager;
+        }
+    );
   };
 }
