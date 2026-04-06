@@ -27,32 +27,35 @@
       installPhase = ''
         mkdir -p $out
 
-        # Find every directory containing a SKILL.md and flatten to $out/<skill-name>/
-        # Use the "name" field from SKILL.md frontmatter as directory name,
-        # matching the behavior of `npx skills add`
-        find -L . -name SKILL.md -type f | while read -r skill_file; do
+        # Find and process each skill directory containing a SKILL.md
+        # Use explicit loop to avoid pipe issues in nix build environment
+        for skill_file in $(find -L . -name SKILL.md -type f); do
           skill_dir=$(dirname "$skill_file")
 
+          # Skip root and template directories
           [ "$skill_dir" = "." ] && continue
-          echo "$skill_dir" | grep -qi "template" && continue
+          if echo "$skill_dir" | grep -qi "template"; then continue; fi
 
           # Extract the name from YAML frontmatter: "name: <value>"
           skill_name=$(sed -n '/^---$/,/^---$/{/^name: */{ s/^name: *//; s/ *$//; p; q; }}' "$skill_file")
 
-          # Fallback to directory name if no frontmatter name
+          # Fallback to directory name if no frontmatter name found
           if [ -z "$skill_name" ]; then
             skill_name=$(basename "$skill_dir")
           fi
 
           # Skip duplicates (symlinks cause the same skill to appear multiple times)
-          [ -d "$out/$skill_name" ] && continue
+          if [ -d "$out/$skill_name" ]; then
+            continue
+          fi
 
-          cp -rL "$skill_dir" "$out/$skill_name"
+          # Copy skill directory with all assets, dereferencing symlinks
+          cp -rL "$skill_dir" "$out/$skill_name" || true
         done
 
-        # Copy top-level docs
+        # Copy repository-level documentation
         for f in AGENTS.md CLAUDE.md; do
-          [ -f "$f" ] && cp "$f" "$out/"
+          [ -f "$f" ] && cp "$f" "$out/" || true
         done
       '';
 
