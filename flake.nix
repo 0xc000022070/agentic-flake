@@ -11,34 +11,37 @@
       nixpkgs.lib.genAttrs supportedSystems (
         system: f nixpkgs.legacyPackages.${system}
       );
+
+    sourcesFile = builtins.fromJSON (builtins.readFile ./sources.json);
+
+    mkSkillPackages = pkgs: let
+      lib = pkgs.lib;
+      pkgLib = import ./lib/packages.nix {inherit pkgs lib;};
+      skillPackages = pkgLib.buildPackageTree pkgLib.mkSkillPackage sourcesFile.providers;
+    in
+      lib.mapAttrs (
+        _: providerData:
+          lib.mapAttrs (
+            _: orgRepos:
+              lib.mapAttrs (_: package: package) orgRepos
+          )
+          providerData
+      )
+      skillPackages;
   in {
     homeManagerModules.agents = import ./modules/home-manager/agents.nix;
     homeManagerModules.default = self.homeManagerModules.agents;
     homeModules.default = self.homeManagerModules.agents;
 
-    packages = forAllSystems (
-      pkgs: let
-        lib = nixpkgs.lib;
+    overlays.default = final: _prev: {
+      agent-skills = {
+        skills-sh = mkSkillPackages final;
+      };
+    };
 
-        sourcesFile = builtins.fromJSON (builtins.readFile ./sources.json);
-        pkgLib = import ./lib/packages.nix {inherit pkgs lib;};
-
-        skillPackages = pkgLib.buildPackageTree pkgLib.mkSkillPackage sourcesFile.providers;
-        flattenedPackages =
-          lib.mapAttrs (
-            providerName: providerData:
-              lib.mapAttrs (
-                org: orgRepos:
-                  lib.mapAttrs (repoName: package: package) orgRepos
-              )
-              providerData
-          )
-          skillPackages;
-      in {
-        skills-sh = flattenedPackages;
-        skills-sh-official = pkgLib.mkOfficialAlias pkgs lib flattenedPackages;
-      }
-    );
+    packages = forAllSystems (pkgs: {
+      skills-sh = mkSkillPackages pkgs;
+    });
 
     devShells = forAllSystems (pkgs: {
       default = pkgs.mkShell {
