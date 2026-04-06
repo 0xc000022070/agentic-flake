@@ -35,5 +35,16 @@
         skills-sh-official = pkgLib.mkOfficialAlias pkgs lib flattenedPackages;
       }
     );
+
+    devShells = forAllSystems (pkgs: {
+      default = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          bun
+          htmlq
+          curl
+          git
+        ];
+      };
+    });
   };
 }
