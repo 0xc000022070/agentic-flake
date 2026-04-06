@@ -36,7 +36,7 @@ try {
 const log = {
 	info: (msg: string) => console.log(`✓ ${msg}`),
 	warn: (msg: string) => console.warn(`⚠ ${msg}`),
-	task: (msg: string) => console.log(`\n📋 ${msg}`),
+	task: (msg: string) => console.log(`\n[~] ${msg}`),
 	progress: (current: number, total: number, step: string) =>
 		process.stdout.write(`  [${current}/${total}] ${step}...\r`),
 };
@@ -140,43 +140,6 @@ async function fetchSha256(
 	}
 }
 
-async function fetchHashWithRev(
-	owner: string,
-	repo: string,
-): Promise<{
-	rev: string;
-	sha256: string;
-	skipped?: boolean;
-	skippedReason?: string;
-}> {
-	const rev = await fetchRev(owner, repo);
-
-	if (!rev) {
-		log.warn(`${owner}/${repo}: failed to fetch rev`);
-		return { rev: "", sha256: "", skipped: false };
-	}
-
-	const existingRev =
-		existingSourcesJson?.providers?.official?.[owner]?.[repo]?.rev;
-	if (existingRev === rev) {
-		return {
-			rev,
-			sha256: existingSourcesJson.providers.official[owner][repo].sha256,
-			skipped: true,
-			skippedReason: "rev-unchanged",
-		};
-	}
-
-	const sha256 = await fetchSha256(owner, repo, rev);
-
-	if (!sha256) {
-		log.warn(`${owner}/${repo}: timeout on sha256 fetch`);
-		return { rev, sha256: "", skipped: true, skippedReason: "timeout" };
-	}
-
-	return { rev, sha256, skipped: false };
-}
-
 async function main() {
 	console.log(`\n${"═".repeat(40)}`);
 	console.log("Sync Official Providers");
@@ -207,36 +170,40 @@ async function main() {
 
 	log.info(`Total: ${totalRepos} repositories`);
 
-	// Phase 3: Fetch revisions and hashes
+	// Phase 3: Fetch revisions and hashes (parallel pipeline)
 	log.task("Phase 3: Fetching revisions and hashes");
 
-	const limit = pLimit(5);
+	const revLimit = pLimit(10); // Higher concurrency for rev fetches (fast git ls-remote)
+	const sha256Limit = pLimit(3); // Lower concurrency for heavy nix-prefetch-url
 	let processed = 0;
 	let skippedRevUnchanged = 0;
 	let skippedTimeout = 0;
 
-	const hashResults: Record<
-		string,
-		Record<
-			string,
-			{ rev: string; sha256: string; skipped?: boolean; skippedReason?: string }
-		>
-	> = {};
+	const revResults: Record<string, Record<string, string>> = {};
+	const sha256Results: Record<string, Record<string, string>> = {};
+	const prefetchQueue: Array<{ org: string; repo: string; rev: string }> = [];
 
+	// Phase 3a: Fetch all revisions in parallel, queue prefetches for new/changed revs
 	for (const org of orgs) {
-		hashResults[org] = {};
+		revResults[org] = {};
 
 		const promises = discovered[org].map((repo) =>
-			limit(async () => {
-				const hash = await fetchHashWithRev(org, repo);
-				hashResults[org][repo] = hash;
-				if (hash.skipped) {
-					if (hash.skippedReason === "rev-unchanged") {
+			revLimit(async () => {
+				const rev = await fetchRev(org, repo);
+				revResults[org][repo] = rev;
+
+				if (rev) {
+					const existingRev =
+						existingSourcesJson?.providers?.official?.[org]?.[repo]?.rev;
+					if (existingRev !== rev) {
+						// New or changed rev, queue for prefetch
+						prefetchQueue.push({ org, repo, rev });
+					} else {
+						// Rev unchanged, skip prefetch
 						skippedRevUnchanged++;
-					} else if (hash.skippedReason === "timeout") {
-						skippedTimeout++;
 					}
 				}
+
 				processed++;
 				log.progress(processed, totalRepos, `${org}/${repo}`);
 			}),
@@ -244,6 +211,24 @@ async function main() {
 
 		await Promise.all(promises);
 	}
+
+	// Phase 3b: Process prefetch queue in parallel (while rev fetching is done)
+	const prefetchPromises = prefetchQueue.map(({ org, repo, rev }) =>
+		sha256Limit(async () => {
+			const sha256 = await fetchSha256(org, repo, rev);
+			if (!sha256Results[org]) {
+				sha256Results[org] = {};
+			}
+			sha256Results[org][repo] = sha256;
+
+			if (!sha256) {
+				skippedTimeout++;
+				log.warn(`${org}/${repo}: timeout on sha256 fetch`);
+			}
+		}),
+	);
+
+	await Promise.all(prefetchPromises);
 
 	console.log(); // newline after progress
 	if (skippedRevUnchanged > 0) {
@@ -273,16 +258,17 @@ async function main() {
 		sources.providers.official[org] = {};
 
 		for (const repo of discovered[org]) {
-			const hash = hashResults[org][repo] || { rev: "", sha256: "" };
+			const rev = revResults[org]?.[repo] || "";
+			const sha256 = sha256Results[org]?.[repo] || "";
 
-			// don't create empty entry
-			if (!hash.rev) {
+			// don't create empty entry if rev fetch failed
+			if (!rev) {
 				skippedNoRev++;
 				continue;
 			}
 
-			// If timeout on sha256, keep existing entry if it has meaningful content
-			if (hash.skippedReason === "timeout") {
+			// If sha256 is empty, keep existing entry if it has meaningful content
+			if (!sha256) {
 				const existing =
 					existingSourcesJson?.providers?.official?.[org]?.[repo];
 				if (existing && existing.rev && existing.sha256) {
@@ -291,14 +277,14 @@ async function main() {
 				continue;
 			}
 
-			if (hash.rev) withRev++;
-			if (hash.sha256) withHash++;
+			if (rev) withRev++;
+			if (sha256) withHash++;
 
 			sources.providers.official[org][repo] = {
 				owner: org,
 				repo: repo,
-				rev: hash.rev,
-				sha256: hash.sha256,
+				rev: rev,
+				sha256: sha256,
 			};
 		}
 	}
