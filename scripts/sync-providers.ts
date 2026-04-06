@@ -267,6 +267,7 @@ async function main() {
 
 	let withRev = 0;
 	let withHash = 0;
+	let skippedNoRev = 0;
 
 	for (const org of orgs) {
 		sources.providers.official[org] = {};
@@ -274,10 +275,17 @@ async function main() {
 		for (const repo of discovered[org]) {
 			const hash = hashResults[org][repo] || { rev: "", sha256: "" };
 
+			// don't create empty entry
+			if (!hash.rev) {
+				skippedNoRev++;
+				continue;
+			}
+
+			// If timeout on sha256, keep existing entry if it has meaningful content
 			if (hash.skippedReason === "timeout") {
 				const existing =
 					existingSourcesJson?.providers?.official?.[org]?.[repo];
-				if (existing) {
+				if (existing && existing.rev && existing.sha256) {
 					sources.providers.official[org][repo] = existing;
 				}
 				continue;
@@ -304,11 +312,20 @@ async function main() {
 	console.log("═".repeat(40));
 	console.log(`  Discovered: ${totalRepos} repositories`);
 	console.log(
+		`  Skipped (no rev): ${skippedNoRev} (${((skippedNoRev / totalRepos) * 100).toFixed(1)}%)`,
+	);
+	console.log(
 		`  With Rev:   ${withRev} (${((withRev / totalRepos) * 100).toFixed(1)}%)`,
 	);
 	console.log(
 		`  With Hash:  ${withHash} (${((withHash / totalRepos) * 100).toFixed(1)}%)`,
 	);
+	if (skippedRevUnchanged > 0) {
+		console.log(`  Skipped (rev unchanged): ${skippedRevUnchanged}`);
+	}
+	if (skippedTimeout > 0) {
+		console.log(`  Skipped (timeout on sha256): ${skippedTimeout}`);
+	}
 	console.log(`${"═".repeat(40)}\n`);
 }
 
