@@ -4,6 +4,8 @@
     workspaces ? {},
     plugins ? [],
   }: let
+    pkgLib = import ./packages.nix {inherit pkgs lib;};
+
     toolDirs = {
       global = ".agents/skills";
       standard = ".agents/skills";
@@ -38,7 +40,8 @@
       lib.flatten (map expandScope normalized);
 
     # Build skill symlink pairs: {source, target}
-    mkSkillSymlinks = entry: let
+    mkSkillSymlinks = rawEntry: let
+      entry = pkgLib.materializeConfiguredSkill rawEntry;
       drv = entry.drv;
       pluginList = entry.plugins;
       scopes = entry.scopes or ["global"];

@@ -1,11 +1,13 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   inherit (lib) mkIf mkEnableOption mkOption types;
 
   cfg = config.programs.agents;
+  pkgLib = import ../../lib/packages.nix {inherit pkgs lib;};
 
   toolDirs = {
     global = ".agents/skills";
@@ -43,7 +45,8 @@
   in
     lib.flatten (map expandScope normalized);
 
-  mkConfiguredSkillFiles = entry: let
+  mkConfiguredSkillFiles = rawEntry: let
+    entry = pkgLib.materializeConfiguredSkill rawEntry;
     drv = entry.drv;
     plugins = entry.plugins;
     scopes = entry.scopes or ["global"];
@@ -60,7 +63,7 @@
       plugins
     ));
 
-  isConfiguredEntry = x: builtins.isAttrs x && x ? drv && x ? plugins;
+  isConfiguredEntry = x: builtins.isAttrs x && x ? plugins && (x ? drv || x ? __agenticSkill);
 
   allSkillFiles = lib.foldl' (acc: entry: acc // mkConfiguredSkillFiles entry) {} cfg.skills;
 in {

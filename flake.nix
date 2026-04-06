@@ -22,6 +22,8 @@
     mkProjectFactory = lib:
       (import ./lib/project-factory.nix {inherit lib;}).project-factory;
 
+    skillApi = import ./lib/skill-api.nix {lib = nixpkgs.lib;};
+
     mkSkillPackages = pkgs: let
       lib = pkgs.lib;
       pkgLib = import ./lib/packages.nix {inherit pkgs lib;};
@@ -37,7 +39,10 @@
       )
       skillPackages;
   in {
-    lib.project-factory = mkProjectFactory nixpkgs.lib;
+    lib = {
+      project-factory = mkProjectFactory nixpkgs.lib;
+      inherit (skillApi) mkSkill;
+    };
 
     homeModules.default = import ./modules/home-manager/agents.nix;
 

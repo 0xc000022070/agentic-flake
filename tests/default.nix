@@ -52,8 +52,16 @@
 
   suites = {
     "encoredev-skills-installation" = ./encoredev-skills.nix;
+    "mk-skill-integration" = ./mk-skill-integration.nix;
+    "openfang-fetch-skill" = ./openfang-fetch-skill.nix;
     "prefix-and-scopes" = ./prefix-and-scopes.nix;
     "workspaces" = ./workspaces.nix;
   };
 in
-  pkgs.lib.mapAttrs (name: path: mkTestSuite name path) suites
+  (pkgs.lib.mapAttrs (name: path: mkTestSuite name path) suites)
+  // {
+    "mk-skill-lib" = import ./mk-skill-lib.nix {
+      inherit pkgs;
+      agentic-flake = self;
+    };
+  }
