@@ -115,7 +115,7 @@ async function fetchSha256(
 	const timeoutPromise = new Promise<"">((resolve) => {
 		setTimeout(() => {
 			resolve("");
-		}, 5000);
+		}, 15000);
 	});
 
 	try {
