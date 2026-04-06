@@ -26,7 +26,7 @@
 
       installPhase = ''
         mkdir -p $out
-        cp -r . $out/
+        cp -rL plugins/* $out/
       '';
 
       meta = with lib; {
