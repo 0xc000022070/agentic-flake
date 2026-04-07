@@ -10,7 +10,7 @@
   configured = skillPkg {
     plugins = [
       "root-skill"
-      "nested/group/child"
+      "child"
     ];
   };
 in
@@ -29,7 +29,7 @@ in
       exit 1
     ''}
 
-    ${if builtins.elem "nested/group/child" skillPkg.availablePlugins then ''
+    ${if builtins.elem "child" skillPkg.availablePlugins then ''
       :
     '' else ''
       echo "nested/group/child was not discovered"

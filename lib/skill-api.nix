@@ -33,9 +33,9 @@
         if hasSkill && !isTemplatePath
         then let
           skillId =
-            if relPath == ""
+            if relParts == []
             then rootSkillName normalizedSrc
-            else relPath;
+            else lib.last relParts;
         in [
           {
             name = skillId;
@@ -53,10 +53,17 @@
     in
       current ++ deeper;
 
-    discovered = lib.listToAttrs (scan normalizedSrc []);
+    scanned = scan normalizedSrc [];
+
+    nameCount = lib.foldl' (acc: e: acc // {${e.name} = (acc.${e.name} or 0) + 1;}) {} scanned;
+    duplicates = builtins.attrNames (lib.filterAttrs (_: count: count > 1) nameCount);
+
+    discovered = lib.listToAttrs scanned;
   in
-    if discovered == {}
+    if scanned == []
     then throw "mkSkill found no SKILL.md files under ${toString normalizedSrc}. Ensure skill directories contain SKILL.md and are not in 'template' directories."
+    else if duplicates != []
+    then throw "mkSkill found duplicate skill names under ${toString normalizedSrc}: ${lib.concatStringsSep ", " duplicates}. Rename the conflicting directories."
     else discovered;
 
   assertKnownPlugins = availablePlugins: requestedPlugins: let
@@ -163,11 +170,25 @@
 in {
   inherit normalizeSrc discoverSkills assertKnownPlugins;
 
+  # Scans a local `src` path for SKILL.md files at eval-time and returns a
+  # configured skill descriptor. No derivation is created — materialization
+  # is deferred until project-factory time via `materializeConfiguredSkill`.
+  #
+  # Skill IDs are the immediate parent directory name of each SKILL.md.
+  # Duplicate names across different depths are a hard error.
+  #
+  # Does not require `pkgs`. Incompatible with remote sources (use
+  # `mkSkillPackage` for GitHub repos).
   mkSkill = {src}:
     mkConfiguredSkillEntry {
       inherit src;
       skillMap = discoverSkills src;
     };
 
+  # Defines skills inline from Nix strings, without any on-disk source.
+  # Each entry requires at least a `content` field (the SKILL.md body).
+  # Optional fields: `name`, `description`, `tags`.
+  #
+  # Like `mkSkill`, returns a descriptor — no derivation until project-factory.
   inherit mkInlineSkill;
 }

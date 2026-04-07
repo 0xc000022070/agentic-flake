@@ -22,7 +22,7 @@ in {
 
         (localSkills {
           scopes = ["demo"];
-          plugins = ["nested/group/child"];
+          plugins = ["child"];
           prefix = "local-";
         })
       ];
@@ -34,11 +34,11 @@ in {
     machine.succeed("test -f /home/testuser/.agents/skills/root-skill/SKILL.md")
     machine.succeed("grep -q 'Root Skill' /home/testuser/.agents/skills/root-skill/SKILL.md")
 
-    machine.succeed("test -d /home/testuser/Projects/demo/.claude/skills/local-nested/group/child")
-    machine.succeed("test -f /home/testuser/Projects/demo/.claude/skills/local-nested/group/child/SKILL.md")
-    machine.succeed("grep -q 'Nested Child Skill' /home/testuser/Projects/demo/.claude/skills/local-nested/group/child/SKILL.md")
+    machine.succeed("test -d /home/testuser/Projects/demo/.claude/skills/local-child")
+    machine.succeed("test -f /home/testuser/Projects/demo/.claude/skills/local-child/SKILL.md")
+    machine.succeed("grep -q 'Nested Child Skill' /home/testuser/Projects/demo/.claude/skills/local-child/SKILL.md")
 
     machine.succeed("test ! -d /home/testuser/.agents/skills/templates")
-    machine.succeed("test ! -d /home/testuser/Projects/demo/.claude/skills/nested/group/child")
+    machine.succeed("test ! -d /home/testuser/Projects/demo/.claude/skills/child")
   '';
 }
