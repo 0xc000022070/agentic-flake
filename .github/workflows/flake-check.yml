@@ -7,14 +7,22 @@ on:
 
 jobs:
   check:
+    name: Evaluate flake
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Code checkout
+        uses: actions/checkout@v6
 
-      - name: Setup Nix
-        uses: cachix/install-nix-action@v27
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Run flake check
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@v2
+        with:
+          fail-mode: true
+
+      - name: Add Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Check the flake
         run: nix flake check
