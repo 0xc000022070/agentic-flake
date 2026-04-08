@@ -136,30 +136,45 @@ in {
       dontBuild = true;
       dontConfigure = true;
 
+      # Skill repos come in two flavours:
+      #   1. Umbrella — root SKILL.md defines the skill, sub-dirs are
+      #      supporting content (e.g. novuhq/skills → "novu").
+      #   2. Flat — no root SKILL.md, each sub-dir is an independent
+      #      skill (e.g. encoredev/skills → "encore-testing", …).
+      # When a root SKILL.md exists, copy the entire source as a
+      # single skill whose name comes from frontmatter or the repo.
       installPhase = ''
         mkdir -p "$out"
 
-        for skill_file in $(find -L . -name SKILL.md -type f); do
-          skill_dir=$(dirname "$skill_file")
-
-          [ "$skill_dir" = "." ] && continue
-          if echo "$skill_dir" | grep -qi "template"; then continue; fi
-
-          skill_name=$(sed -n '/^---$/,/^---$/{/^name: */{ s/^name: *//; s/ *$//; p; q; }}' "$skill_file")
-
+        if [ -f "./SKILL.md" ]; then
+          skill_name=$(sed -n '/^---$/,/^---$/{/^name: */{ s/^name: *//; s/ *$//; p; q; }}' "./SKILL.md")
           if [ -z "$skill_name" ]; then
-            skill_name=$(basename "$skill_dir")
+            skill_name="${repo}"
           fi
-
-          # Normalize to kebab-case: lowercase, spaces/underscores to hyphens
           skill_name=$(echo "$skill_name" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | sed 's/--*/-/g; s/^-//; s/-$//')
+          cp -rL . "$out/$skill_name"
+        else
+          for skill_file in $(find -L . -name SKILL.md -type f); do
+            skill_dir=$(dirname "$skill_file")
 
-          if [ -d "$out/$skill_name" ]; then
-            continue
-          fi
+            [ "$skill_dir" = "." ] && continue
+            if echo "$skill_dir" | grep -qi "template"; then continue; fi
 
-          cp -rL "$skill_dir" "$out/$skill_name" || true
-        done
+            skill_name=$(sed -n '/^---$/,/^---$/{/^name: */{ s/^name: *//; s/ *$//; p; q; }}' "$skill_file")
+
+            if [ -z "$skill_name" ]; then
+              skill_name=$(basename "$skill_dir")
+            fi
+
+            skill_name=$(echo "$skill_name" | tr '[:upper:]' '[:lower:]' | tr ' _' '--' | sed 's/--*/-/g; s/^-//; s/-$//')
+
+            if [ -d "$out/$skill_name" ]; then
+              continue
+            fi
+
+            cp -rL "$skill_dir" "$out/$skill_name" || true
+          done
+        fi
 
         for f in AGENTS.md CLAUDE.md; do
           [ -f "$f" ] && cp "$f" "$out/" || true
