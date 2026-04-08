@@ -72,7 +72,49 @@
 
   isConfiguredEntry = x: builtins.isAttrs x && x ? plugins && (x ? drv || x ? __agenticSkill);
 
-  allSkillFiles = lib.foldl' (acc: entry: acc // mkConfiguredSkillFiles entry) {} cfg.skills;
+  # Collect skill files per entry, then detect target path conflicts across skills
+  allSkillFileLists = map mkConfiguredSkillFiles cfg.skills;
+
+  # Detect conflicts: same target path from different skill entries
+  targetSources =
+    lib.foldl' (
+      acc: fileSet:
+        lib.foldl' (
+          innerAcc: target:
+            innerAcc
+            // {
+              ${target} = (innerAcc.${target} or []) ++ [fileSet.${target}.source];
+            }
+        )
+        acc (builtins.attrNames fileSet)
+    ) {}
+    allSkillFileLists;
+
+  conflicts = lib.filterAttrs (_: sources: builtins.length sources > 1) targetSources;
+  conflictNames = builtins.attrNames conflicts;
+
+  allSkillFiles =
+    if conflictNames != []
+    then let
+      conflictDetails = lib.concatStringsSep "\n  " (
+        map (
+          target:
+            "${target}:\n    " + lib.concatStringsSep "\n    " conflicts.${target}
+        )
+        conflictNames
+      );
+    in
+      throw ''
+        Plugin name conflicts detected in programs.agents.skills:
+          ${conflictDetails}
+
+        Solutions:
+        1. Add unique prefixes to conflicting skills:
+           (skillA { plugins = [...]; prefix = "skillA-"; })
+        2. Select non-conflicting plugins from each skill
+        3. Use different scopes to separate conflicting skills
+      ''
+    else lib.foldl' (acc: fileSet: acc // fileSet) {} allSkillFileLists;
 in {
   options.programs.agents = {
     enable = mkEnableOption "Declarative agent skills for AI coding tools";

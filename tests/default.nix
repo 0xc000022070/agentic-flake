@@ -59,6 +59,7 @@
     "mk-inline-skill-mixed" = ./mk-inline-skill-mixed.nix;
     "openfang-fetch-skill" = ./openfang-fetch-skill.nix;
     "prefix-and-scopes" = ./prefix-and-scopes.nix;
+    "hm-conflict-detection" = ./hm-conflict-detection.nix;
     "workspaces" = ./workspaces.nix;
   };
 
@@ -111,6 +112,10 @@ in
       agentic-flake = self;
     };
     "project-factory-null-scopes" = import ./project-factory-null-scopes.nix {
+      inherit pkgs;
+      agentic-flake = self;
+    };
+    "project-factory-conflict-detection" = import ./project-factory-conflict-detection.nix {
       inherit pkgs;
       agentic-flake = self;
     };

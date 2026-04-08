@@ -57,16 +57,41 @@
 
     scanned = scan normalizedSrc [];
 
-    nameCount = lib.foldl' (acc: e: acc // {${e.name} = (acc.${e.name} or 0) + 1;}) {} scanned;
-    duplicates = builtins.attrNames (lib.filterAttrs (_: count: count > 1) nameCount);
+    # Keep only first occurrence of each skill name (shallowest directory wins).
+    # Duplicates within a source are allowed — conflict only matters if the user
+    # actually selects an ambiguous plugin (checked at selection time).
+    unique =
+      (lib.foldl' (
+          acc: e:
+            if builtins.hasAttr e.name acc.seen
+            then acc
+            else {
+              result = acc.result ++ [e];
+              seen = acc.seen // {${e.name} = true;};
+            }
+        ) {
+          result = [];
+          seen = {};
+        }
+        scanned).result;
 
-    discovered = lib.listToAttrs scanned;
+    # Track which names are ambiguous so we can warn at selection time
+    nameToPaths =
+      lib.foldl' (
+        acc: e:
+          acc // {${e.name} = (acc.${e.name} or []) ++ [e.value];}
+      ) {}
+      scanned;
+    duplicateMap = lib.filterAttrs (_: paths: builtins.length paths > 1) nameToPaths;
+
+    discovered = lib.listToAttrs unique;
   in
     if scanned == []
     then throw "mkSkill found no SKILL.md files under ${toString normalizedSrc}. Ensure skill directories contain SKILL.md and are not in 'template' directories."
-    else if duplicates != []
-    then throw "mkSkill found duplicate skill names under ${toString normalizedSrc}: ${lib.concatStringsSep ", " duplicates}. Rename the conflicting directories."
-    else discovered;
+    else {
+      skillMap = discovered;
+      inherit duplicateMap;
+    };
 
   assertKnownPlugins = availablePlugins: requestedPlugins: let
     unknown = lib.filter (plugin: !(builtins.elem plugin availablePlugins)) requestedPlugins;
@@ -79,13 +104,32 @@
       ''
     else true;
 
+  assertNoAmbiguousPlugins = duplicateMap: requestedPlugins: let
+    ambiguous = lib.filter (plugin: builtins.hasAttr plugin duplicateMap) requestedPlugins;
+  in
+    if ambiguous != []
+    then let
+      details = lib.concatStringsSep "\n  " (
+        map (name: "${name}: ${lib.concatStringsSep ", " duplicateMap.${name}}")
+        ambiguous
+      );
+    in
+      throw ''
+        Ambiguous skill plugin(s) — multiple directories share the same name:
+          ${details}
+
+        Add a prefix to disambiguate: plugins = [...]; prefix = "my-";
+      ''
+    else true;
+
   mkConfiguredSkillEntry = {
     src,
     skillMap,
+    duplicateMap ? {},
   }: let
     availablePlugins = builtins.attrNames skillMap;
   in {
-    inherit src skillMap availablePlugins;
+    inherit src skillMap availablePlugins duplicateMap;
     __agenticSkill = true;
 
     __functor = _self: {
@@ -93,10 +137,11 @@
       scopes ? null,
       prefix ? "",
     }:
-      builtins.seq (assertKnownPlugins availablePlugins plugins) {
+      builtins.seq (assertKnownPlugins availablePlugins plugins)
+      (builtins.seq (assertNoAmbiguousPlugins duplicateMap plugins) {
         inherit plugins scopes prefix src skillMap availablePlugins;
         __agenticSkill = true;
-      };
+      });
   };
   buildFrontmatter = {
     name,
@@ -177,14 +222,17 @@ in {
   # is deferred until project-factory time via `materializeConfiguredSkill`.
   #
   # Skill IDs are the immediate parent directory name of each SKILL.md.
-  # Duplicate names across different depths are a hard error.
+  # Duplicate names across different depths are silently deduplicated (first wins).
+  # An error is only raised if the user selects an ambiguous plugin.
   #
   # Does not require `pkgs`. Incompatible with remote sources (use
   # `mkSkillPackage` for GitHub repos).
-  mkSkill = {src}:
+  mkSkill = {src}: let
+    discovered = discoverSkills src;
+  in
     mkConfiguredSkillEntry {
       inherit src;
-      skillMap = discoverSkills src;
+      inherit (discovered) skillMap duplicateMap;
     };
 
   # Defines skills inline from Nix strings, without any on-disk source.
