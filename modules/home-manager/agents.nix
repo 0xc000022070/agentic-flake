@@ -51,7 +51,12 @@
     entry = pkgLib.materializeConfiguredSkill rawEntry;
     drv = entry.drv;
     plugins = entry.plugins;
-    scopes = let s = entry.scopes or null; in if s != null then s else cfg.defaultScopes;
+    scopes = let
+      s = entry.scopes or null;
+    in
+      if s != null
+      then s
+      else cfg.defaultScopes;
     prefix = entry.prefix or "";
     dirs = scopesToDirs scopes;
   in

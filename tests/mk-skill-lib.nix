@@ -22,26 +22,38 @@ in
       exit 1
     }
 
-    ${if builtins.elem "root-skill" skillPkg.availablePlugins then ''
-      :
-    '' else ''
-      echo "root-skill was not discovered"
-      exit 1
-    ''}
+    ${
+      if builtins.elem "root-skill" skillPkg.availablePlugins
+      then ''
+        :
+      ''
+      else ''
+        echo "root-skill was not discovered"
+        exit 1
+      ''
+    }
 
-    ${if builtins.elem "child" skillPkg.availablePlugins then ''
-      :
-    '' else ''
-      echo "nested/group/child was not discovered"
-      exit 1
-    ''}
+    ${
+      if builtins.elem "child" skillPkg.availablePlugins
+      then ''
+        :
+      ''
+      else ''
+        echo "nested/group/child was not discovered"
+        exit 1
+      ''
+    }
 
-    ${if builtins.elem "templates/example-template" skillPkg.availablePlugins then ''
-      echo "Template paths should not be exposed as plugins"
-      exit 1
-    '' else ''
-      :
-    ''}
+    ${
+      if builtins.elem "templates/example-template" skillPkg.availablePlugins
+      then ''
+        echo "Template paths should not be exposed as plugins"
+        exit 1
+      ''
+      else ''
+        :
+      ''
+    }
 
     test "${configured.prefix}" = "" || {
       echo "Expected default prefix to be empty"

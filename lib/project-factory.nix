@@ -44,7 +44,12 @@
       entry = pkgLib.materializeConfiguredSkill rawEntry;
       drv = entry.drv;
       pluginList = entry.plugins;
-      scopes = entry.scopes or ["global"];
+      scopes = let
+        s = entry.scopes or null;
+      in
+        if s != null
+        then s
+        else ["global"];
       prefix = entry.prefix or "";
       dirs = scopesToDirs scopes;
     in

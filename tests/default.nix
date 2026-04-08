@@ -72,4 +72,8 @@ in
       inherit pkgs;
       agentic-flake = self;
     };
+    "project-factory-null-scopes" = import ./project-factory-null-scopes.nix {
+      inherit pkgs;
+      agentic-flake = self;
+    };
   }
