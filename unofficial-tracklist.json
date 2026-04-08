@@ -3,6 +3,10 @@
 		{
 			"owner": "daffy0208",
 			"repo": "ai-dev-standards"
+		},
+		{
+			"owner": "wshobson",
+			"repo": "agents"
 		}
 	]
 }

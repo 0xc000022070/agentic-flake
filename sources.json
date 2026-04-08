@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-08T00:18:23.356Z",
+  "updatedAt": "2026-04-08T01:43:42.553Z",
   "providers": {
     "official": {
       "anthropics": {
@@ -1763,6 +1763,14 @@
           "repo": "ai-dev-standards",
           "rev": "32c3241e48f9fe2c3de611ad9168503ea41f28fd",
           "sha256": "05c5ppxi7b34qxygvyawm34vyqlvkm78rchn56p6jgsysyq4ym59"
+        }
+      },
+      "wshobson": {
+        "agents": {
+          "owner": "wshobson",
+          "repo": "agents",
+          "rev": "70444e5b1fae2237f3cb087c70db043ab633fe11",
+          "sha256": "12qbr5igwk2xdp3jq0ms9bvnc9iysmpzgk8nifnqfdr1dczkngnq"
         }
       }
     }
