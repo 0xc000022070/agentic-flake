@@ -331,23 +331,22 @@ async function main() {
 	}
 
 	for (const entry of tracklistOfficial) {
-		const skillName = entry.skillName || entry.repo;
 		try {
 			const rev = await fetchLatestRev(entry.owner, entry.repo);
 			const sha256 = await fetchSha256(entry.owner, entry.repo, rev);
 
-			if (!sources.providers.official[skillName]) {
-				sources.providers.official[skillName] = {};
+			if (!sources.providers.official[entry.owner]) {
+				sources.providers.official[entry.owner] = {};
 			}
 
-			sources.providers.official[skillName][entry.repo] = {
+			sources.providers.official[entry.owner][entry.repo] = {
 				owner: entry.owner,
 				repo: entry.repo,
 				rev: rev,
 				sha256: sha256 || "",
 			};
 
-			log.info(`Synced official: ${skillName}/${entry.repo}`);
+			log.info(`Synced official: ${entry.owner}/${entry.repo}`);
 		} catch (error) {
 			log.warn(
 				`Failed to sync ${entry.owner}/${entry.repo}: ${error instanceof Error ? error.message : error}`,

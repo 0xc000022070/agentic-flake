@@ -1782,14 +1782,6 @@
           "rev": "024425d45a5e8dd0c56c5f675c9457e2de38428a",
           "sha256": "1mnzgag6j869glawkzhal5fyf6s2z6x8am07imnjqsadbgi7742z"
         }
-      },
-      "skills": {
-        "skills": {
-          "owner": "novuhq",
-          "repo": "skills",
-          "rev": "4c719ee80fa8b50e2467edf9684410d44c74513e",
-          "sha256": "0fc2xnxzsrjy7m7a009wzy1irvhlc3iciclx94px8vw391v9n93y"
-        }
       }
     },
     "unofficial": {
