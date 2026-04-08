@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updatedAt": "2026-04-08T03:20:35.818Z",
+  "updatedAt": "2026-04-08T03:26:00.347Z",
   "namespace": "skills-sh",
   "providers": {
     "official": {
@@ -1775,6 +1775,24 @@
           "repo": "ui",
           "rev": "d718a8045f13622d8f5f25e853d27604a2149b6d",
           "sha256": "1lfl0c4rsy2iqbdc37bzlfivmahr7azwrk5jj3xk5d4qqvr3vla0"
+        }
+      }
+    },
+    "unofficial": {
+      "daffy0208": {
+        "ai-dev-standards": {
+          "owner": "daffy0208",
+          "repo": "ai-dev-standards",
+          "rev": "32c3241e48f9fe2c3de611ad9168503ea41f28fd",
+          "sha256": "05c5ppxi7b34qxygvyawm34vyqlvkm78rchn56p6jgsysyq4ym59"
+        }
+      },
+      "wshobson": {
+        "agents": {
+          "owner": "wshobson",
+          "repo": "agents",
+          "rev": "70444e5b1fae2237f3cb087c70db043ab633fe11",
+          "sha256": "12qbr5igwk2xdp3jq0ms9bvnc9iysmpzgk8nifnqfdr1dczkngnq"
         }
       }
     }
