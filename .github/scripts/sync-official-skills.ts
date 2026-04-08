@@ -21,11 +21,21 @@ interface SourcesJson {
 	};
 }
 
-const PROJECT_ROOT = path.dirname(
-	path.dirname(import.meta.url.replace("file://", "")),
-);
+const PROJECT_ROOT = path.join(import.meta.dir, "../..");
 const SOURCES_FILE = path.join(PROJECT_ROOT, "sources.json");
+const TRACKLIST_FILE = path.join(PROJECT_ROOT, "tracklist.json");
 const SKILLS_SH_BASE = "https://skills.sh";
+
+interface TrackedRepo {
+	owner: string;
+	repo: string;
+	skillName?: string;
+}
+
+interface Tracklist {
+	official?: TrackedRepo[];
+	unofficial?: TrackedRepo[];
+}
 
 let existingSourcesJson: SourcesJson | null = null;
 try {
@@ -105,6 +115,20 @@ async function fetchRev(owner: string, repo: string): Promise<string> {
 	} catch {
 		return "";
 	}
+}
+
+async function fetchLatestRev(owner: string, repo: string): Promise<string> {
+	const response = await fetch(
+		`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`,
+	);
+	if (!response.ok) {
+		throw new Error(`GitHub API error: ${response.statusText}`);
+	}
+	const commits = await response.json();
+	if (!commits[0]?.sha) {
+		throw new Error(`No commits found for ${owner}/${repo}`);
+	}
+	return commits[0].sha;
 }
 
 async function fetchSha256(
@@ -286,6 +310,45 @@ async function main() {
 				rev: rev,
 				sha256: sha256,
 			};
+		}
+	}
+
+	// Phase 5: Process tracklist.json official repos
+	log.task("Phase 5: Processing official repos from tracklist.json");
+
+	let tracklistOfficial: TrackedRepo[] = [];
+	try {
+		const tracklistContent = readFileSync(TRACKLIST_FILE, "utf-8");
+		const tracklist: Tracklist = JSON.parse(tracklistContent);
+		tracklistOfficial = tracklist.official || [];
+	} catch {
+		log.warn(
+			"Could not read tracklist.json, skipping individual official repos",
+		);
+	}
+
+	for (const entry of tracklistOfficial) {
+		const skillName = entry.skillName || entry.repo;
+		try {
+			const rev = await fetchLatestRev(entry.owner, entry.repo);
+			const sha256 = await fetchSha256(entry.owner, entry.repo, rev);
+
+			if (!sources.providers.official[skillName]) {
+				sources.providers.official[skillName] = {};
+			}
+
+			sources.providers.official[skillName][entry.repo] = {
+				owner: entry.owner,
+				repo: entry.repo,
+				rev: rev,
+				sha256: sha256 || "",
+			};
+
+			log.info(`Synced official: ${skillName}/${entry.repo}`);
+		} catch (error) {
+			log.warn(
+				`Failed to sync ${entry.owner}/${entry.repo}: ${error instanceof Error ? error.message : error}`,
+			);
 		}
 	}
 

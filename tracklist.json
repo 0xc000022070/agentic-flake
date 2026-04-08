@@ -1,5 +1,12 @@
 {
-	"tracked": [
+	"official": [
+		{
+			"owner": "shadcn",
+			"repo": "ui",
+			"skillName": "shadcn"
+		}
+	],
+	"unofficial": [
 		{
 			"owner": "daffy0208",
 			"repo": "ai-dev-standards"

@@ -10,7 +10,8 @@ interface TrackedRepo {
 }
 
 interface Tracklist {
-	tracked: TrackedRepo[];
+	official?: TrackedRepo[];
+	unofficial?: TrackedRepo[];
 }
 
 interface SourceEntry {
@@ -32,7 +33,7 @@ interface Sources {
 }
 
 const projectRoot = path.join(import.meta.dir, "../..");
-const tracklistPath = path.join(projectRoot, "unofficial-tracklist.json");
+const tracklistPath = path.join(projectRoot, "tracklist.json");
 const sourcesPath = path.join(projectRoot, "sources.json");
 
 async function fetchLatestRev(owner: string, repo: string): Promise<string> {
@@ -94,7 +95,7 @@ async function sync() {
 	}
 
 	const trackedMap = new Map<string, TrackedRepo>();
-	for (const entry of tracklist.tracked) {
+	for (const entry of tracklist.unofficial || []) {
 		const key = `${entry.owner}/${entry.repo}`;
 		trackedMap.set(key, entry);
 	}
