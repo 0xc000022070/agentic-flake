@@ -4,6 +4,10 @@
 			"owner": "shadcn",
 			"repo": "ui",
 			"skillName": "shadcn"
+		},
+		{
+			"owner": "novuhq",
+			"repo": "skills"
 		}
 	],
 	"unofficial": [
