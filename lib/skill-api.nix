@@ -24,7 +24,11 @@
     normalizedSrc = normalizeSrc src;
 
     # Recursively scan directory tree for SKILL.md files, building (skillId -> relPath) map.
-    # Skips directories matching template patterns and respects symlinks.
+    # Skips directories matching template patterns.
+    # Symlinks are excluded: readDir on a symlink-to-file causes an
+    # uncatchable abort in Nix.  fetchFromGitHub already resolves
+    # directory symlinks inside tarballs, and mkSkillPackage uses
+    # find -L at build time, so nothing is lost in practice.
     scan = path: relParts: let
       entries = builtins.readDir path;
       relPath = lib.concatStringsSep "/" relParts;
@@ -49,7 +53,7 @@
         ]
         else [];
 
-      dirs = builtins.attrNames (lib.filterAttrs (name: kind: kind == "directory" || kind == "symlink") entries);
+      dirs = builtins.attrNames (lib.filterAttrs (_: kind: kind == "directory") entries);
 
       deeper = lib.flatten (map (name: scan (path + "/${name}") (relParts ++ [name])) dirs);
     in
