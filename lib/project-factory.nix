@@ -3,6 +3,7 @@
     pkgs,
     workspaces ? {},
     plugins ? [],
+    defaultScopes ? ["global"],
   }: let
     pkgLib = import ./packages.nix {inherit pkgs lib;};
 
@@ -49,7 +50,7 @@
       in
         if s != null
         then s
-        else ["global"];
+        else defaultScopes;
       prefix = entry.prefix or "";
       dirs = scopesToDirs scopes;
     in
