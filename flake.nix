@@ -54,7 +54,7 @@
       agentic-setup = self.lib.project-factory {
         inherit pkgs;
 
-        plugins = with pkgs.agent-skills; [
+        skills = with pkgs.agent-skills; [
           (official.anthropics.skills {
             scopes = ["standard" "claude"];
             plugins = ["skill-creator"];

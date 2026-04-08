@@ -2,7 +2,7 @@
   project-factory = {
     pkgs,
     workspaces ? {},
-    plugins ? [],
+    skills ? [],
     defaultScopes ? ["global"],
   }: let
     pkgLib = import ./packages.nix {inherit pkgs lib;};
@@ -64,7 +64,7 @@
         pluginList
       );
 
-    allSymlinks = lib.flatten (map mkSkillSymlinks plugins);
+    allSymlinks = lib.flatten (map mkSkillSymlinks skills);
 
     # Generate shell hook that creates directories and symlinks
     setupHook = pkgs.writeScript "agentic-setup" ''

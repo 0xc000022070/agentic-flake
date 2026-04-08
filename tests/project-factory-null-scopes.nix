@@ -26,7 +26,7 @@
   # project-factory with null scopes should default to ["global"]
   factory = agentic-flake.lib.project-factory {
     inherit pkgs;
-    plugins = [configuredSkill];
+    skills = [configuredSkill];
   };
 in
   pkgs.runCommand "project-factory-null-scopes-test" {} ''
