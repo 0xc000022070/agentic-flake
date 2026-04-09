@@ -4,6 +4,7 @@
     workspaces ? {},
     skills ? [],
     defaultScopes ? ["global"],
+    context ? {},
   }: let
     pkgLib = import ./packages.nix {inherit pkgs lib;};
 
@@ -68,6 +69,73 @@
 
     allSymlinks = lib.flatten (map mkSkillSymlinks skills);
 
+    # Process context files: normalize filenames and separate inline vs filesystem paths
+    processContextFiles = let
+      normalizeFilename = name: value: let
+        hasExtension = lib.hasSuffix ".md" name;
+        filename =
+          if hasExtension
+          then name
+          else "${name}.md";
+      in {
+        filename = filename;
+        isInline = builtins.isString value;
+        source = value;
+      };
+
+      contextEntries =
+        lib.mapAttrsToList (
+          name: value:
+            normalizeFilename name value
+        )
+        context;
+    in
+      contextEntries;
+
+    contextFiles = processContextFiles;
+
+    # Detect conflicting context file targets
+    contextTargets =
+      lib.foldl' (
+        acc: entry:
+          acc
+          // {
+            ${entry.filename} =
+              (acc.${entry.filename} or [])
+              ++ [
+                {
+                  filename = entry.filename;
+                  isInline = entry.isInline;
+                }
+              ];
+          }
+      ) {}
+      contextFiles;
+
+    contextConflicts = lib.filterAttrs (_: targets: builtins.length targets > 1) contextTargets;
+    contextConflictNames = builtins.attrNames contextConflicts;
+
+    # Validate no context conflicts
+    validatedContext =
+      if contextConflictNames != []
+      then let
+        conflictDetails = lib.concatStringsSep "\n" (
+          map (
+            filename: let
+              fileConflicts = contextConflicts.${filename};
+            in "  ${filename}: defined ${builtins.toString (builtins.length fileConflicts)} times"
+          )
+          contextConflictNames
+        );
+      in
+        throw ''
+          Context file name conflicts detected in project-factory:
+          ${conflictDetails}
+
+          Each context file key must map to a unique filename. Use different keys if you need multiple files.
+        ''
+      else contextFiles;
+
     # Detect conflicting plugin names across different skills
     pluginTargets =
       lib.foldl' (
@@ -123,7 +191,7 @@
         ''
       else allSymlinks;
 
-    # Generate shell hook that creates directories and symlinks
+    # Generate shell hook that creates directories, symlinks, and context files
     setupHook = pkgs.writeScript "agentic-setup" ''
       #!${pkgs.runtimeShell}
       set -e
@@ -142,6 +210,22 @@
           ''
         )
         validated}
+
+      ${lib.concatMapStringsSep "\n" (
+          entry:
+            if entry.isInline
+            then ''
+              cat > "$PWD/${entry.filename}" << 'CONTEXT_EOF'
+${entry.source}CONTEXT_EOF
+            ''
+            else ''
+              if [ -e "$PWD/${entry.filename}" ]; then
+                rm -rf "$PWD/${entry.filename}"
+              fi
+              ln -sf "${entry.source}" "$PWD/${entry.filename}"
+            ''
+        )
+        validatedContext}
     '';
   in {
     shellHook = ''
@@ -150,5 +234,6 @@
     '';
 
     allSymlinks = validated;
+    allContextFiles = validatedContext;
   };
 }

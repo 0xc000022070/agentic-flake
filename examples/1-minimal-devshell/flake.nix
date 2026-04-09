@@ -59,6 +59,15 @@
           inherit pkgs;
           defaultScopes = ["standard" "claude"];
 
+          context = {
+            CLAUDE = ''
+              # Claude Context
+
+              This is an example project demonstrating agentic-flake.
+              Focus on practical, working solutions.
+            '';
+          };
+
           skills = with pkgs.agent-skills; [
             (official.anthropics.skills {
               plugins = ["pdf" "pptx"];

@@ -119,4 +119,8 @@ in
       inherit pkgs;
       agentic-flake = self;
     };
+    "project-factory-context" = import ./project-factory-context.nix {
+      inherit pkgs;
+      agentic-flake = self;
+    };
   }
