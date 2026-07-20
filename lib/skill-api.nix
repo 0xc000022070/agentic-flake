@@ -11,12 +11,18 @@
       then /. + builtins.unsafeDiscardStringContext coerced.value
       else throw "mkSkill expects `src` to be a path-like value such as `./.`, `builtins.fetchGit { ...; }`, or a derivation like `pkgs.fetchFromGitHub { ...; }`";
 
+  # Store paths look like /nix/store/<32-char-hash>-source; strip the hash so
+  # fetcher/flake-input sources yield "source" instead of "<hash>-source".
   rootSkillName = src: let
     parts = lib.filter (part: part != "") (lib.splitString "/" (toString src));
+    lastPart = lib.last parts;
+    unhashed = builtins.match "[0-9a-df-np-sv-z]{32}-(.*)" lastPart;
   in
     if parts == []
     then throw "mkSkill could not derive a root skill name from src"
-    else lib.last parts;
+    else if unhashed != null
+    then lib.head unhashed
+    else lastPart;
 
   isTemplate = relParts: lib.any (part: builtins.match ".*[Tt]emplate.*" part != null) relParts;
 
@@ -221,22 +227,44 @@
 in {
   inherit normalizeSrc discoverSkills assertKnownPlugins;
 
-  # Scans a local `src` path for SKILL.md files at eval-time and returns a
+  # Scans a `src` path for SKILL.md files at eval-time and returns a
   # configured skill descriptor. No derivation is created — materialization
   # is deferred until project-factory time via `materializeConfiguredSkill`.
   #
+  # `src` is any path-like value: a local path, a `flake = false` input, or a
+  # fetcher result (`builtins.fetchGit`, `pkgs.fetchFromGitHub`, ...).
+  #
   # Skill IDs are the immediate parent directory name of each SKILL.md.
+  # A SKILL.md at the source root is named after the source directory unless
+  # `name` overrides it (recommended for store-path sources, whose basename
+  # is usually just "source").
   # Duplicate names across different depths are silently deduplicated (first wins).
   # An error is only raised if the user selects an ambiguous plugin.
   #
-  # Does not require `pkgs`. Incompatible with remote sources (use
-  # `mkSkillPackage` for GitHub repos).
-  mkSkill = {src}: let
+  # Does not require `pkgs`.
+  mkSkill = {
+    src,
+    name ? null,
+  }: let
     discovered = discoverSkills src;
+    skillMap =
+      if name == null
+      then discovered.skillMap
+      else
+        lib.mapAttrs' (
+          id: relPath:
+            lib.nameValuePair (
+              if relPath == "."
+              then name
+              else id
+            )
+            relPath
+        )
+        discovered.skillMap;
   in
     mkConfiguredSkillEntry {
-      inherit src;
-      inherit (discovered) skillMap duplicateMap;
+      inherit src skillMap;
+      inherit (discovered) duplicateMap;
     };
 
   # Defines skills inline from Nix strings, without any on-disk source.

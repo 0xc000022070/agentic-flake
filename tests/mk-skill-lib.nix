@@ -13,6 +13,13 @@
       "child"
     ];
   };
+
+  # Root SKILL.md sources get their id from the directory name unless
+  # `name` overrides it.
+  renamedPkg = agentic-flake.lib.mkSkill {
+    src = ./fixtures/mk-skill/root-skill;
+    name = "renamed-skill";
+  };
 in
   pkgs.runCommand "mk-skill-lib-test" {} ''
     set -e
@@ -58,6 +65,17 @@ in
     test "${configured.prefix}" = "" || {
       echo "Expected default prefix to be empty"
       exit 1
+    }
+
+    ${
+      if renamedPkg.availablePlugins == ["renamed-skill"]
+      then ''
+        :
+      ''
+      else ''
+        echo "name override was not applied to root skill"
+        exit 1
+      ''
     }
 
     mkdir -p "$out"
