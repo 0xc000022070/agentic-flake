@@ -39,9 +39,8 @@ in {
           plugins = ["root-skill"];
           scopes = ["global"];
         })
-        # Umbrella skill (root SKILL.md)
         (pkgs.agent-skills.official.novuhq.skills {
-          plugins = ["novu"];
+          plugins = ["trigger-notification" "inbox-integration"];
           scopes = ["claude"];
         })
       ];
@@ -65,17 +64,14 @@ in {
     machine.succeed("test -f /home/testuser/.agents/skills/root-skill/SKILL.md")
     machine.succeed("grep -q 'Root Skill' /home/testuser/.agents/skills/root-skill/SKILL.md")
 
-    # Umbrella skill: root SKILL.md with nested sub-skills
-    machine.succeed("test -d /home/testuser/.claude/skills/novu")
-    machine.succeed("test -f /home/testuser/.claude/skills/novu/SKILL.md")
-    machine.succeed("test -d /home/testuser/.claude/skills/novu/inbox-integration")
-    machine.succeed("test -d /home/testuser/.claude/skills/novu/trigger-notification")
+    machine.succeed("test -f /home/testuser/.claude/skills/trigger-notification/SKILL.md")
+    machine.succeed("test -f /home/testuser/.claude/skills/inbox-integration/SKILL.md")
 
     # Isolation: each skill only present in its assigned scope
     machine.fail("test -d /home/testuser/.claude/skills/redis-development")
     machine.fail("test -d /home/testuser/.agents/skills/inline-tool")
     machine.fail("test -d /home/testuser/.claude/skills/root-skill")
     machine.fail("test -d /home/testuser/.agents/skills/mvp-builder")
-    machine.fail("test -d /home/testuser/.agents/skills/novu")
+    machine.fail("test -d /home/testuser/.agents/skills/trigger-notification")
   '';
 }
