@@ -40,7 +40,7 @@ in {
           scopes = ["global"];
         })
         (pkgs.agent-skills.novuhq.skills {
-          plugins = ["trigger-notification" "inbox-integration"];
+          plugins = ["novu-trigger-notification" "novu-inbox-integration"];
           scopes = ["claude"];
         })
       ];
@@ -64,14 +64,14 @@ in {
     machine.succeed("test -f /home/testuser/.agents/skills/root-skill/SKILL.md")
     machine.succeed("grep -q 'Root Skill' /home/testuser/.agents/skills/root-skill/SKILL.md")
 
-    machine.succeed("test -f /home/testuser/.claude/skills/trigger-notification/SKILL.md")
-    machine.succeed("test -f /home/testuser/.claude/skills/inbox-integration/SKILL.md")
+    machine.succeed("test -f /home/testuser/.claude/skills/novu-trigger-notification/SKILL.md")
+    machine.succeed("test -f /home/testuser/.claude/skills/novu-inbox-integration/SKILL.md")
 
     # Isolation: each skill only present in its assigned scope
     machine.fail("test -d /home/testuser/.claude/skills/redis-development")
     machine.fail("test -d /home/testuser/.agents/skills/inline-tool")
     machine.fail("test -d /home/testuser/.claude/skills/root-skill")
     machine.fail("test -d /home/testuser/.agents/skills/mvp-builder")
-    machine.fail("test -d /home/testuser/.agents/skills/trigger-notification")
+    machine.fail("test -d /home/testuser/.agents/skills/novu-trigger-notification")
   '';
 }
