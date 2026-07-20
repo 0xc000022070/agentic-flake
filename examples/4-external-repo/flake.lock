@@ -1,0 +1,114 @@
+{
+  "nodes": {
+    "agentic-flake": {
+      "inputs": {
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "path": "../..",
+        "type": "path"
+      },
+      "original": {
+        "path": "../..",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "android-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774721945,
+        "narHash": "sha256-m+d1iXr5tfyDQfJfVV6qhZHL1o8WgeMy8raezLcIMEs=",
+        "owner": "new-silvermoon",
+        "repo": "awesome-android-agent-skills",
+        "rev": "e5d0275e9f28f4e5feb5939210d78ef39568c029",
+        "type": "github"
+      },
+      "original": {
+        "owner": "new-silvermoon",
+        "repo": "awesome-android-agent-skills",
+        "type": "github"
+      }
+    },
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "agentic-flake",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775457580,
+        "narHash": "sha256-ikws/ssAmG20AGrEwBuwspwPlkubJu34mB+Uz2fJBJs=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "5de7dbd151b0bd65d45785553d4a22d832733ffc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1775036866,
+        "narHash": "sha256-ZojAnPuCdy657PbTq5V0Y+AHKhZAIwSIT2cb8UgAz/U=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "6201e203d09599479a3b3450ed24fa81537ebc4e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1784356753,
+        "narHash": "sha256-12KrbMiWLcf8m7pCvAtZh1ZrgF85ZXDXvfR/fWTKy84=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "61b7c44c4073f0b827768aff0049561b5110ea5a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "novu-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782143596,
+        "narHash": "sha256-YfN8me+TLhqvKaUthWdo3RvryIT6wu2u1zB94AlYK0w=",
+        "owner": "novuhq",
+        "repo": "skills",
+        "rev": "067f4fe39d0ecc4ef6713ec2d145d13f835737aa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "novuhq",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "agentic-flake": "agentic-flake",
+        "android-skills": "android-skills",
+        "nixpkgs": "nixpkgs_2",
+        "novu-skills": "novu-skills"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

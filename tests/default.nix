@@ -86,6 +86,21 @@
       in
         outputs.devShells."x86_64-linux".default
     );
+    # External inputs are substituted with local fixtures so the check stays
+    # hermetic; it exercises the example's wiring, incl. mkSkill `name`.
+    "example-4-external-repo-shell" = (
+      let
+        flake = import (self + "/examples/4-external-repo/flake.nix");
+        outputs = flake.outputs {
+          self = self;
+          nixpkgs = nixpkgs;
+          agentic-flake = self;
+          android-skills = self + "/tests/fixtures/external-repo/android-skills";
+          novu-skills = self + "/tests/fixtures/external-repo/novu-skills";
+        };
+      in
+        outputs.devShells."x86_64-linux".default
+    );
     "example-3-home-manager-config" = (
       let
         flake = import (self + "/examples/3-home-manager/flake.nix");
