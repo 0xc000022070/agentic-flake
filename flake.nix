@@ -63,7 +63,7 @@
         ) (pinned.pins or {});
     };
 
-    # Overlay-free access to the catalog: agentic-flake.skills.${system}.official...
+    # Overlay-free access to the catalog: agentic-flake.skills.${system}.<org>.<repo>
     skills = forAllSystems (pkgs: pkgs.agent-skills);
 
     templates.default = {
@@ -82,7 +82,7 @@
         inherit pkgs;
 
         skills = with pkgs.agent-skills; [
-          (official.anthropics.skills {
+          (anthropics.skills {
             scopes = ["standard" "claude"];
             plugins = ["skill-creator"];
           })

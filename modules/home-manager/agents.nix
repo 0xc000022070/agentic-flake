@@ -191,7 +191,7 @@ in {
         Each entry is created by calling a skill package as a function:
 
         ```nix
-        official.encoredev.skills {
+        encoredev.skills {
           plugins = ["encore-api" "encore-database"];
           scopes = ["global" "claude"];  # optional, default: defaultScopes
           prefix = "";                   # optional, default: ""
@@ -211,7 +211,7 @@ in {
       '';
       example = lib.literalExpression ''
         with pkgs.agent-skills; [
-          (official.encoredev.skills {
+          (encoredev.skills {
             plugins = [
               "encore-api"
               "encore-auth"
@@ -223,12 +223,12 @@ in {
             # No scopes specified — will use defaultScopes
           })
 
-          (official.getsentry.skills {
+          (getsentry.skills {
             plugins = ["find-bugs"];
             scopes = ["cc"];  # Override default scopes for this entry
           })
 
-          (official.anthropics.skills {
+          (anthropics.skills {
             plugins = ["pdf" "pptx"];
             prefix = "anthropic-";
           })
@@ -244,7 +244,7 @@ in {
         message = ''
           programs.agents.skills expects configured entries.
           Call the skill package as a function:
-            official.encoredev.skills { plugins = ["encore-api"]; }
+            encoredev.skills { plugins = ["encore-api"]; }
         '';
       })
       cfg.skills;

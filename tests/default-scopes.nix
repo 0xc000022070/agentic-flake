@@ -12,20 +12,20 @@
 
       skills = with pkgs.agent-skills; [
         # These inherit defaultScopes ["common" "claude"]
-        (official.encoredev.skills {
+        (encoredev.skills {
           plugins = [
             "encore-api"
             "encore-code-review"
           ];
         })
 
-        (official.anthropics.skills {
+        (anthropics.skills {
           plugins = ["pdf"];
           prefix = "anthropics-";
         })
 
         # This one overrides defaultScopes with its own
-        (official.anthropics.skills {
+        (anthropics.skills {
           plugins = ["pptx"];
           scopes = ["global"];
         })

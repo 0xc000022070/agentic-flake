@@ -22,11 +22,11 @@ in {
       enable = true;
 
       skills = [
-        (pkgs.agent-skills.official.redis.agent-skills {
+        (pkgs.agent-skills.redis.agent-skills {
           plugins = ["redis-development"];
           scopes = ["global"];
         })
-        (pkgs.agent-skills.unofficial.daffy0208.ai-dev-standards {
+        (pkgs.agent-skills.daffy0208.ai-dev-standards {
           plugins = ["mvp-builder"];
           scopes = ["claude"];
         })
@@ -39,7 +39,7 @@ in {
           plugins = ["root-skill"];
           scopes = ["global"];
         })
-        (pkgs.agent-skills.official.novuhq.skills {
+        (pkgs.agent-skills.novuhq.skills {
           plugins = ["trigger-notification" "inbox-integration"];
           scopes = ["claude"];
         })

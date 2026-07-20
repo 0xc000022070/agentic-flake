@@ -11,12 +11,12 @@
       # No explicit defaultScopes — should use module default ["global"]
 
       skills = with pkgs.agent-skills; [
-        (official.encoredev.skills {
+        (encoredev.skills {
           plugins = ["encore-api"];
           # No scopes specified — should inherit module's default ["global"]
         })
 
-        (official.anthropics.skills {
+        (anthropics.skills {
           plugins = ["pdf"];
           scopes = ["claude"];
           # This one overrides with explicit scopes

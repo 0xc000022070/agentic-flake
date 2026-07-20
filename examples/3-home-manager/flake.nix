@@ -94,7 +94,7 @@
                 scopes = ["common"];
               })
 
-              (official.anthropics.skills {
+              (anthropics.skills {
                 plugins = ["pdf" "pptx"];
                 scopes = ["common"];
                 prefix = "anthropics-";

@@ -9,7 +9,7 @@
     programs.agents = {
       enable = true;
       skills = with pkgs.agent-skills; [
-        (official.anthropics.skills {
+        (anthropics.skills {
           prefix = "anthropics-";
           scopes = ["global"];
           plugins = [
@@ -18,7 +18,7 @@
           ];
         })
 
-        (official.anthropics.skills {
+        (anthropics.skills {
           scopes = ["claude"];
           plugins = [
             "claude-api"

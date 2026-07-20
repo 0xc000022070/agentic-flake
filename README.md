@@ -23,7 +23,7 @@ This scaffolds a minimal dev shell with one catalog skill; edit the `skills` lis
 Example:
 
 ```nix
-(official.anthropics.skills {
+(anthropics.skills {
   plugins = [
     "pdf"
     "pptx"
@@ -130,7 +130,7 @@ The catalog is reachable directly via the `skills` output — no overlay require
         defaultScopes = ["standard" "claude"];
 
         skills = [
-          (catalog.official.anthropics.skills {
+          (catalog.anthropics.skills {
             plugins = ["skill-creator"];
           })
         ];

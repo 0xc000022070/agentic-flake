@@ -68,7 +68,7 @@
               plugins = [];
             })
 
-            (official.anthropics.skills {
+            (anthropics.skills {
               plugins = ["pdf" "pptx"];
               prefix = "anthropics-";
             })

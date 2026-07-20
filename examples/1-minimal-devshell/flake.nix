@@ -69,7 +69,7 @@
           };
 
           skills = with pkgs.agent-skills; [
-            (official.anthropics.skills {
+            (anthropics.skills {
               plugins = ["pdf" "pptx"];
               prefix = "anthropics-";
             })

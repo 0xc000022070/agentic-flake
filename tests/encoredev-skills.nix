@@ -9,7 +9,7 @@
     programs.agents = {
       enable = true;
       skills = with pkgs.agent-skills; [
-        (official.encoredev.skills {
+        (encoredev.skills {
           scopes = ["claude" "global"];
           plugins = [
             "encore-api"

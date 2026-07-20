@@ -21,7 +21,7 @@
       };
 
       skills = with pkgs.agent-skills; [
-        (official.encoredev.skills {
+        (encoredev.skills {
           scopes = ["global" "claude"];
           plugins = [
             "encore-api"
@@ -29,7 +29,7 @@
           ];
         })
 
-        (official.anthropics.skills {
+        (anthropics.skills {
           scopes = ["foo"];
           prefix = "my-";
           plugins = [

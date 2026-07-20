@@ -194,18 +194,18 @@ in {
       };
     };
 
-  buildPackageTree = mkSkill: providers:
+  # The provider split in sources.json (official/unofficial) is a sync detail;
+  # the exposed tree is flat: <org>.<repo>.
+  buildPackageTree = mkSkill: providers: let
+    orgs = lib.foldl' lib.recursiveUpdate {} (lib.attrValues providers);
+  in
     lib.mapAttrs (
-      providerName: providerData:
+      org: orgRepos:
         lib.mapAttrs (
-          org: orgRepos:
-            lib.mapAttrs (
-              repoName: repoData:
-                mkSkill repoData
-            )
-            orgRepos
+          repoName: repoData:
+            mkSkill repoData
         )
-        providerData
+        orgRepos
     )
-    providers;
+    orgs;
 }

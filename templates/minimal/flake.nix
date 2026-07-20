@@ -25,7 +25,7 @@
           defaultScopes = ["standard" "claude"];
 
           skills = [
-            (catalog.official.anthropics.skills {
+            (catalog.anthropics.skills {
               plugins = ["skill-creator"];
             })
           ];
