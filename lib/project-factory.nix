@@ -215,8 +215,8 @@
           entry:
             if entry.isInline
             then ''
-              cat > "$PWD/${entry.filename}" << 'CONTEXT_EOF'
-${entry.source}CONTEXT_EOF
+                            cat > "$PWD/${entry.filename}" << 'CONTEXT_EOF'
+              ${entry.source}CONTEXT_EOF
             ''
             else ''
               if [ -e "$PWD/${entry.filename}" ]; then
