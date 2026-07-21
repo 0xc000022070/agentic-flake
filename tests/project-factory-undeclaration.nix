@@ -10,9 +10,12 @@
     done
   '';
 
-  mkSetup = plugins:
+  mkSetup = {
+    name ? "default",
+    plugins,
+  }:
     agentic-flake.lib.project-factory {
-      inherit pkgs;
+      inherit pkgs name;
       skills = [
         {
           drv = skillBundle;
@@ -22,10 +25,23 @@
       ];
     };
 
-  initialSetup = mkSetup ["kept" "removed" "changed"];
-  reducedSetup = mkSetup ["kept"];
+  initialSetup = mkSetup {plugins = ["kept" "removed" "changed"];};
+  reducedSetup = mkSetup {plugins = ["kept"];};
   emptySetup = agentic-flake.lib.project-factory {
     inherit pkgs;
+    skills = [];
+  };
+  inheritedSetup = mkSetup {
+    name = "inherited";
+    plugins = ["kept"];
+  };
+  localSetup = mkSetup {
+    name = "local";
+    plugins = ["removed"];
+  };
+  emptyInheritedSetup = agentic-flake.lib.project-factory {
+    inherit pkgs;
+    name = "inherited";
     skills = [];
   };
 in
@@ -65,6 +81,21 @@ in
     test ! -e "$work/.agents/skills/kept"
     test ! -e "$manifest"
     test "$(readlink "$work/.agents/skills/changed")" = "$external"
+
+    ${inheritedSetup.shellHook}
+    ${localSetup.shellHook}
+
+    test -L "$work/.agents/skills/kept"
+    test -L "$work/.agents/skills/removed"
+    test -f "$work/.agents/.agentic-flake-managed-links-inherited"
+    test -f "$work/.agents/.agentic-flake-managed-links-local"
+
+    ${emptyInheritedSetup.shellHook}
+
+    test ! -e "$work/.agents/skills/kept"
+    test -L "$work/.agents/skills/removed"
+    test ! -e "$work/.agents/.agentic-flake-managed-links-inherited"
+    test -f "$work/.agents/.agentic-flake-managed-links-local"
 
     mkdir -p "$out"
     touch "$out/ok"

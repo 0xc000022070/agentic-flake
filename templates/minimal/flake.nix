@@ -22,6 +22,7 @@
 
         agenticSetup = agentic-flake.lib.project-factory {
           inherit pkgs;
+          name = "my-project";
           defaultScopes = ["standard" "claude"];
 
           skills = [

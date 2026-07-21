@@ -1,6 +1,7 @@
 {lib}: {
   project-factory = {
     pkgs,
+    name ? "default",
     workspaces ? {},
     skills ? [],
     defaultScopes ? ["global"],
@@ -68,6 +69,13 @@
       );
 
     allSymlinks = lib.flatten (map mkSkillSymlinks skills);
+
+    managedFile =
+      if builtins.match "[A-Za-z0-9][A-Za-z0-9._-]*" name == null
+      then throw "project-factory name must contain only letters, numbers, dots, underscores, and hyphens"
+      else if name == "default"
+      then ".agents/.agentic-flake-managed-links"
+      else ".agents/.agentic-flake-managed-links-${name}";
 
     # Process context files: normalize filenames and separate inline vs filesystem paths
     processContextFiles = let
@@ -196,7 +204,7 @@
       #!${pkgs.runtimeShell}
       set -e
 
-      managed_file="$PWD/.agents/.agentic-flake-managed-links"
+      managed_file="$PWD/${managedFile}"
       managed_tmp="$(mktemp)"
 
       cleanup_managed_tmp() {

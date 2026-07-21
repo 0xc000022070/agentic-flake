@@ -127,6 +127,7 @@ The catalog is reachable directly via the `skills` output — no overlay require
 
       agenticSetup = agentic-flake.lib.project-factory {
         inherit pkgs;
+        name = "my-project";
         defaultScopes = ["standard" "claude"];
 
         skills = [
@@ -143,6 +144,10 @@ The catalog is reachable directly via the `skills` output — no overlay require
   };
 }
 ```
+
+Set a stable, unique `name` when a shell inherits another shell through
+`inputsFrom`. Each factory keeps a separate managed-link manifest, preventing
+one shell from treating another shell's skills as undeclared.
 
 Alternatively, apply `agentic-flake.overlays.default` (via `appendOverlays` or your nixpkgs config) to get the same catalog as `pkgs.agent-skills` — convenient with `with pkgs.agent-skills;` in Home Manager setups.
 
