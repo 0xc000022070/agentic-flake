@@ -197,16 +197,16 @@
       set -e
 
       ${lib.concatMapStringsSep "\n" (
-          symlink: "mkdir -p \"$(dirname \"$PWD/${symlink.target}\")\" 2>/dev/null || true"
-        )
-        validated}
-
-      ${lib.concatMapStringsSep "\n" (
           symlink: ''
-            if [ -e "$PWD/${symlink.target}" ]; then
-              rm -rf "$PWD/${symlink.target}"
+            if [ ! -e "${symlink.source}" ]; then
+              echo "agentic-flake: warning: skill source '${symlink.source}' does not exist; skipping '${symlink.target}'" >&2
+            else
+              mkdir -p "$(dirname "$PWD/${symlink.target}")"
+              if [ -e "$PWD/${symlink.target}" ] || [ -L "$PWD/${symlink.target}" ]; then
+                rm -rf "$PWD/${symlink.target}"
+              fi
+              ln -s "${symlink.source}" "$PWD/${symlink.target}"
             fi
-            ln -sf "${symlink.source}" "$PWD/${symlink.target}"
           ''
         )
         validated}

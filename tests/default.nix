@@ -138,4 +138,8 @@ in
       inherit pkgs;
       agentic-flake = self;
     };
+    "project-factory-missing-source" = import ./project-factory-missing-source.nix {
+      inherit pkgs;
+      agentic-flake = self;
+    };
   }
