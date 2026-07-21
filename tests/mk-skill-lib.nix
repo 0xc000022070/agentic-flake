@@ -20,6 +20,15 @@
     src = ./fixtures/mk-skill/root-skill;
     name = "renamed-skill";
   };
+
+  fileWithoutName = builtins.tryEval (agentic-flake.lib.mkSkill {
+    src = ./fixtures/mk-skill/root-skill/SKILL.md;
+  });
+
+  namedFilePkg = agentic-flake.lib.mkSkill {
+    src = ./fixtures/mk-skill/root-skill/SKILL.md;
+    name = "file-skill";
+  };
 in
   pkgs.runCommand "mk-skill-lib-test" {} ''
     set -e
@@ -74,6 +83,39 @@ in
       ''
       else ''
         echo "name override was not applied to root skill"
+        exit 1
+      ''
+    }
+
+    ${
+      if !fileWithoutName.success
+      then ''
+        :
+      ''
+      else ''
+        echo "single-file src without name should fail"
+        exit 1
+      ''
+    }
+
+    ${
+      if namedFilePkg.availablePlugins == ["file-skill"]
+      then ''
+        :
+      ''
+      else ''
+        echo "name override was not applied to single-file src"
+        exit 1
+      ''
+    }
+
+    ${
+      if pkgs.lib.hasInfix "root-skill" namedFilePkg.__inlineSkillContent.file-skill
+      then ''
+        :
+      ''
+      else ''
+        echo "single-file src content was not read"
         exit 1
       ''
     }

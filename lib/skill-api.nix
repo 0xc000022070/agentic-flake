@@ -13,16 +13,19 @@
 
   # Store paths look like /nix/store/<32-char-hash>-source; strip the hash so
   # fetcher/flake-input sources yield "source" instead of "<hash>-source".
+  stripStoreHash = s: let
+    unhashed = builtins.match "[0-9a-df-np-sv-z]{32}-(.*)" s;
+  in
+    if unhashed != null
+    then lib.head unhashed
+    else s;
+
   rootSkillName = src: let
     parts = lib.filter (part: part != "") (lib.splitString "/" (toString src));
-    lastPart = lib.last parts;
-    unhashed = builtins.match "[0-9a-df-np-sv-z]{32}-(.*)" lastPart;
   in
     if parts == []
     then throw "mkSkill could not derive a root skill name from src"
-    else if unhashed != null
-    then lib.head unhashed
-    else lastPart;
+    else stripStoreHash (lib.last parts);
 
   isTemplate = relParts: lib.any (part: builtins.match ".*[Tt]emplate.*" part != null) relParts;
 
@@ -173,6 +176,33 @@
   in
     "---\n" + lib.concatStringsSep "\n" lines + "\n---\n\n";
 
+  mkInlineEntry = {
+    skillMap,
+    skillContent,
+  }: let
+    baseEntry = mkConfiguredSkillEntry {
+      src = "inline";
+      inherit skillMap;
+    };
+  in
+    baseEntry
+    // {
+      __inlineSkillContent = skillContent;
+      __functor = _self: {
+        plugins,
+        scopes ? null,
+        prefix ? "",
+      }:
+        builtins.seq (assertKnownPlugins baseEntry.availablePlugins plugins) {
+          inherit plugins scopes prefix;
+          src = "inline";
+          inherit skillMap;
+          availablePlugins = baseEntry.availablePlugins;
+          __agenticSkill = true;
+          __inlineSkillContent = skillContent;
+        };
+    };
+
   mkInlineSkill = skillDefs: let
     validateSkill = id: def:
       if !def ? content
@@ -201,29 +231,8 @@
           frontmatter + def.content
       )
       skillDefs;
-  in let
-    baseEntry = mkConfiguredSkillEntry {
-      src = "inline";
-      inherit skillMap;
-    };
   in
-    baseEntry
-    // {
-      __inlineSkillContent = skillContent;
-      __functor = _self: {
-        plugins,
-        scopes ? null,
-        prefix ? "",
-      }:
-        builtins.seq (assertKnownPlugins baseEntry.availablePlugins plugins) {
-          inherit plugins scopes prefix;
-          src = "inline";
-          inherit skillMap;
-          availablePlugins = baseEntry.availablePlugins;
-          __agenticSkill = true;
-          __inlineSkillContent = skillContent;
-        };
-    };
+    mkInlineEntry {inherit skillMap skillContent;};
 in {
   inherit normalizeSrc discoverSkills assertKnownPlugins;
 
@@ -241,31 +250,47 @@ in {
   # Duplicate names across different depths are silently deduplicated (first wins).
   # An error is only raised if the user selects an ambiguous plugin.
   #
+  # `src` may also be a single SKILL.md file (e.g. `pkgs.fetchurl` of a raw
+  # file); its content is read at eval time and installed as one skill.
+  # `name` is required in that case.
+  #
   # Does not require `pkgs`.
   mkSkill = {
     src,
     name ? null,
   }: let
-    discovered = discoverSkills src;
-    skillMap =
-      if name == null
-      then discovered.skillMap
-      else
-        lib.mapAttrs' (
-          id: relPath:
-            lib.nameValuePair (
-              if relPath == "."
-              then name
-              else id
-            )
-            relPath
-        )
-        discovered.skillMap;
+    normalized = normalizeSrc src;
   in
-    mkConfiguredSkillEntry {
-      inherit src skillMap;
-      inherit (discovered) duplicateMap;
-    };
+    if builtins.readFileType normalized == "regular"
+    then
+      if name == null
+      then throw "mkSkill: `name` is required when `src` is a single SKILL.md file"
+      else
+        mkInlineEntry {
+          skillMap = {${name} = ".";};
+          skillContent = {${name} = builtins.readFile normalized;};
+        }
+    else let
+      discovered = discoverSkills src;
+      skillMap =
+        if name == null
+        then discovered.skillMap
+        else
+          lib.mapAttrs' (
+            id: relPath:
+              lib.nameValuePair (
+                if relPath == "."
+                then name
+                else id
+              )
+              relPath
+          )
+          discovered.skillMap;
+    in
+      mkConfiguredSkillEntry {
+        inherit src skillMap;
+        inherit (discovered) duplicateMap;
+      };
 
   # Defines skills inline from Nix strings, without any on-disk source.
   # Each entry requires at least a `content` field (the SKILL.md body).
