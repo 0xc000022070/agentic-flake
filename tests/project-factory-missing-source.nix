@@ -23,8 +23,11 @@ in
     set -e
 
     work="$TMPDIR/work"
-    mkdir -p "$work"
+    mkdir -p "$work/.agents/skills"
     cd "$work"
+
+    ln -s "${skillBundle}/missing" "$work/.agents/skills/missing"
+    test -L "$work/.agents/skills/missing"
 
     (
       ${setup.shellHook}

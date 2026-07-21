@@ -196,11 +196,55 @@
       #!${pkgs.runtimeShell}
       set -e
 
+      managed_file="$PWD/.agents/.agentic-flake-managed-links"
+      managed_tmp="$(mktemp)"
+
+      cleanup_managed_tmp() {
+        if [ -n "$managed_tmp" ]; then
+          rm -f "$managed_tmp"
+        fi
+      }
+
+      trap cleanup_managed_tmp EXIT HUP INT TERM
+
       ${lib.concatMapStringsSep "\n" (
           symlink: ''
             if [ ! -e "${symlink.source}" ]; then
               echo "agentic-flake: warning: skill source '${symlink.source}' does not exist; skipping '${symlink.target}'" >&2
+              if [ -L "$PWD/${symlink.target}" ] && [ ! -e "$PWD/${symlink.target}" ]; then
+                rm -f "$PWD/${symlink.target}"
+              fi
             else
+              printf '%s\t%s\n' '${symlink.target}' '${symlink.source}' >> "$managed_tmp"
+            fi
+          ''
+        )
+        validated}
+
+      if [ -f "$managed_file" ]; then
+        while IFS="$(printf '\t')" read -r old_target old_source; do
+          [ -n "$old_target" ] || continue
+
+          if ! cut -f1 "$managed_tmp" | grep -Fqx -- "$old_target"; then
+            target_path="$PWD/$old_target"
+            if [ -L "$target_path" ]; then
+              current_source="$(readlink "$target_path")"
+              if [ "$current_source" = "$old_source" ]; then
+                rm -f "$target_path"
+                echo "agentic-flake: removed undeclared skill '$old_target'"
+              else
+                echo "agentic-flake: warning: managed link '$old_target' changed outside agentic-flake; leaving it unchanged" >&2
+              fi
+            elif [ -e "$target_path" ]; then
+              echo "agentic-flake: warning: managed path '$old_target' is no longer a symlink; leaving it unchanged" >&2
+            fi
+          fi
+        done < "$managed_file"
+      fi
+
+      ${lib.concatMapStringsSep "\n" (
+          symlink: ''
+            if [ -e "${symlink.source}" ]; then
               mkdir -p "$(dirname "$PWD/${symlink.target}")"
               if [ -e "$PWD/${symlink.target}" ] || [ -L "$PWD/${symlink.target}" ]; then
                 rm -rf "$PWD/${symlink.target}"
@@ -210,6 +254,14 @@
           ''
         )
         validated}
+
+      if [ -s "$managed_tmp" ]; then
+        mkdir -p "$(dirname "$managed_file")"
+        mv "$managed_tmp" "$managed_file"
+        managed_tmp=""
+      else
+        rm -f "$managed_file"
+      fi
 
       ${lib.concatMapStringsSep "\n" (
           entry:

@@ -142,4 +142,8 @@ in
       inherit pkgs;
       agentic-flake = self;
     };
+    "project-factory-undeclaration" = import ./project-factory-undeclaration.nix {
+      inherit pkgs;
+      agentic-flake = self;
+    };
   }
