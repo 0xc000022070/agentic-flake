@@ -215,6 +215,17 @@
 
       trap cleanup_managed_tmp EXIT HUP INT TERM
 
+      # Concurrent shells run this hook at once, so the link is swapped in with
+      # a rename instead of rm + ln, which can follow a peer's fresh link.
+      replace_link() {
+        if [ -e "$2" ] && [ ! -L "$2" ]; then
+          rm -rf "$2"
+        fi
+        link_tmp="$2.agentic-tmp.$$"
+        ${pkgs.coreutils}/bin/ln -sfn "$1" "$link_tmp"
+        ${pkgs.coreutils}/bin/mv -Tf "$link_tmp" "$2"
+      }
+
       ${lib.concatMapStringsSep "\n" (
           symlink: ''
             if [ ! -e "${symlink.source}" ]; then
@@ -254,10 +265,7 @@
           symlink: ''
             if [ -e "${symlink.source}" ]; then
               mkdir -p "$(dirname "$PWD/${symlink.target}")"
-              if [ -e "$PWD/${symlink.target}" ] || [ -L "$PWD/${symlink.target}" ]; then
-                rm -rf "$PWD/${symlink.target}"
-              fi
-              ln -s "${symlink.source}" "$PWD/${symlink.target}"
+              replace_link "${symlink.source}" "$PWD/${symlink.target}"
             fi
           ''
         )
@@ -279,10 +287,7 @@
               ${entry.source}CONTEXT_EOF
             ''
             else ''
-              if [ -e "$PWD/${entry.filename}" ]; then
-                rm -rf "$PWD/${entry.filename}"
-              fi
-              ln -sf "${entry.source}" "$PWD/${entry.filename}"
+              replace_link "${entry.source}" "$PWD/${entry.filename}"
             ''
         )
         validatedContext}

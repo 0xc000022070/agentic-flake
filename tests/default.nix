@@ -146,4 +146,8 @@ in
       inherit pkgs;
       agentic-flake = self;
     };
+    "project-factory-concurrent" = import ./project-factory-concurrent.nix {
+      inherit pkgs;
+      agentic-flake = self;
+    };
   }
