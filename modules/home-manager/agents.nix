@@ -16,6 +16,12 @@
     claude = ".claude/skills";
   };
 
+  homeDirs =
+    toolDirs
+    // {
+      claude = "${config.programs.claude-code.configDir or "${config.home.homeDirectory}/.claude"}/skills";
+    };
+
   allTools = lib.attrNames (lib.removeAttrs toolDirs ["global" "common" "standard"]);
 
   # Convert scopes to directories, handling both built-in tools and workspaces
@@ -27,7 +33,7 @@
       else [scopes];
     expandScope = scope:
       if builtins.hasAttr scope toolDirs
-      then [toolDirs.${scope}]
+      then [homeDirs.${scope}]
       else if builtins.hasAttr scope cfg.workspaces
       then let
         workspace = cfg.workspaces.${scope};
@@ -129,7 +135,7 @@ in {
 
         Built-in scopes:
         - `"global"`, `"common"`, `"standard"` (aliases): `~/.agents/skills/`
-        - `"claude"`: `~/.claude/skills/`
+        - `"claude"`: `skills/` under `programs.claude-code.configDir` (`~/.claude` by default)
 
         Example: `defaultScopes = ["global" "claude"];` means all skills go to both
         `~/.agents/skills/` and `~/.claude/skills/`,
